@@ -14,8 +14,15 @@ func main() {
 		ctx.String(200, "I am breathing fine")
 	})
 
-	router.GET("/movies", controllers.GetMovies())
-	router.GET("/movies/:movieId", controllers.GetMovie())
+	// routes and handlers
 
+	// movie routes
+	router.GET("/movies", controllers.GetMovies())
+	router.GET("/movies/:imdb_id", controllers.GetMovie())
+	router.POST("/movies", controllers.AddMovie())
+
+	// user routes
+	router.POST("/register", controllers.RegisterUser())
+	router.POST("/login", controllers.LoginUser())
 	log.Fatal(router.Run(":8080"))
 }
