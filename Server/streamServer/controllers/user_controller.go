@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"stream-server/database"
 	"stream-server/models"
+	"stream-server/utils"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -128,6 +129,21 @@ func LoginUser() gin.HandlerFunc {
 			return
 		}
 
+		// getting tokens
+		token, refreshToken, err := utils.GenerateAllTokens(foundUser.UserID, foundUser.FirstName, foundUser.LastName, foundUser.Email, foundUser.Role)
+
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+			return
+		}
+
+		// update the user document with the tokens
+		err = utils.UpdateUserTokens(foundUser.UserID, token, refreshToken)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update token"})
+			return
+		}
+		
 		// building the user response
 		var userResponse = models.UserResponse{
 			UserID:          foundUser.UserID,
@@ -136,6 +152,8 @@ func LoginUser() gin.HandlerFunc {
 			FavouriteGenres: foundUser.FavouriteGenres,
 			FirstName:       foundUser.FirstName,
 			LastName:        foundUser.LastName,
+			Token:           token,
+			RefreshToken:    refreshToken,
 		}
 
 		ctx.JSON(http.StatusOK, gin.H{"message": "login successful", "data": userResponse})

@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	"stream-server/controllers"
+	"stream-server/routes"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,14 +15,8 @@ func main() {
 	})
 
 	// routes and handlers
+	routes.UnprotectedRoutes(router)
+	routes.ProtectedRoutes(router)
 
-	// movie routes
-	router.GET("/movies", controllers.GetMovies())
-	router.GET("/movies/:imdb_id", controllers.GetMovie())
-	router.POST("/movies", controllers.AddMovie())
-
-	// user routes
-	router.POST("/register", controllers.RegisterUser())
-	router.POST("/login", controllers.LoginUser())
 	log.Fatal(router.Run(":8080"))
 }
