@@ -91,7 +91,11 @@ func GetAccessToken(ctx *gin.Context) (string, error) {
 		return "", errors.New("Authorization header is missing")
 	}
 
-	token := authHeader[len("Bearer "):]
+	if len(authHeader) < 7 || authHeader[:7] != "Bearer " {
+		return "", errors.New("invalid authorization header format")
+	}
+
+	token := authHeader[7:]
 
 	if token == "" {
 		return "", errors.New("Token is missing")
@@ -123,4 +127,42 @@ func ValidateToken(tokenString string) (*SignedDetails, error) {
 		return nil, errors.New("token has expired")
 	}
 	return claims, nil
+}
+
+func GetUserIDFromCtx(ctx *gin.Context) (string, error) {
+	userId, exists := ctx.Get("user_id")
+	if !exists {
+		return "", errors.New("couldn't find userId in context")
+	}
+
+	// asserting userid to string
+	userIdStr, ok := userId.(string)
+	if !ok {
+		return "", errors.New("userid is not a valid string")
+	}
+
+	if userIdStr == "" {
+		return "", errors.New("userid is missing")
+	}
+
+	return userIdStr, nil
+}
+
+func GetUserRoleFromCtx(ctx *gin.Context) (string, error) {
+	userRole, exists := ctx.Get("role")
+	if !exists {
+		return "", errors.New("couldn't find user role in context")
+	}
+
+	// asserting userRole to string
+	userRoleStr, ok := userRole.(string)
+	if !ok {
+		return "", errors.New("user role is not a valid string")
+	}
+
+	if userRoleStr == "" {
+		return "", errors.New("user role is missing")
+	}
+
+	return userRoleStr, nil
 }

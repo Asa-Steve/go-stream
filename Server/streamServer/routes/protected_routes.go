@@ -13,4 +13,6 @@ func ProtectedRoutes(router *gin.Engine) {
 	// routes
 	router.GET("/movies/:imdb_id", controllers.GetMovie())
 	router.POST("/movies", controllers.AddMovie())
+	router.GET("/recommendations", controllers.GetRecommendedMovies())
+	router.PATCH("/add-review/:imdb_id", controllers.AddReview())
 }

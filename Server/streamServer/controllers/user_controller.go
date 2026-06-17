@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"stream-server/database"
 	"stream-server/models"
@@ -11,6 +12,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -143,7 +146,7 @@ func LoginUser() gin.HandlerFunc {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update token"})
 			return
 		}
-		
+
 		// building the user response
 		var userResponse = models.UserResponse{
 			UserID:          foundUser.UserID,
@@ -158,4 +161,54 @@ func LoginUser() gin.HandlerFunc {
 
 		ctx.JSON(http.StatusOK, gin.H{"message": "login successful", "data": userResponse})
 	}
+}
+
+func GetUserFavMovies(userId string) ([]string, error) {
+	filter := bson.M{
+		"user_id": userId,
+	}
+
+	projections := bson.M{
+		"favourite_genres": 1,
+		"_id":              0,
+	}
+
+	opts := options.FindOne().SetProjection(projections)
+
+	// context
+	c, cancel := context.WithTimeout(context.Background(), time.Second*100)
+	defer cancel()
+
+	// fetching user
+	var foundUser bson.D
+	err := userCollection.FindOne(c, filter, opts).Decode(&foundUser)
+
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return []string{}, errors.New("No user was found")
+		}
+		return []string{}, err
+	}
+
+	var favGenres []string
+
+	for _, item := range foundUser {
+		if item.Key == "favourite_genres" {
+			favArr, ok := item.Value.(bson.A)
+			if !ok {
+				return []string{}, errors.New("couldn't read user favourites")
+			}
+			for _, fav := range favArr {
+				genres := fav.(bson.D)
+				for _, genre := range genres {
+					if genre.Key == "genre_name" {
+						favGenres = append(favGenres, genre.Value.(string))
+					}
+				}
+			}
+
+		}
+	}
+
+	return favGenres, nil
 }
