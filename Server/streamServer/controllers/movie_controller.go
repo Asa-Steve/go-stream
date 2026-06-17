@@ -128,6 +128,19 @@ type Res struct {
 func AddReview() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
+		userRole, err := utils.GetUserRoleFromCtx(ctx)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		fmt.Println("Role::::", userRole)
+
+		if userRole != "ADMIN" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "access denied"})
+			return
+		}
+
 		// check for the movide imdbId
 		imdbId := ctx.Param("imdb_id")
 
@@ -139,7 +152,7 @@ func AddReview() gin.HandlerFunc {
 		var req Req
 
 		// read user review content
-		err := ctx.ShouldBind(&req)
+		err = ctx.ShouldBind(&req)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "bad request body"})
 			return
